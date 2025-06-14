@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'lms',
     # DRF
     'rest_framework',
+    'django_filters',
 ]
 
 AUTH_USER_MODEL = 'users.User'
