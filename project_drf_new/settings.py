@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+from datetime import timedelta # <-- ЭТОТ ИМПОРТ ДОЛЖЕН БЫТЬ ЗДЕСЬ (В НАЧАЛЕ)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-f#te8zwebdq&0_a4)we_i$9psa44xugdnmooaa@&4%l2jiz)89'
+SECRET_KEY = 'django-insecure-f#te8zwebdq&0_a4)we_i$9psa44xugdnmooaa@&4%l2jiz)89' # Можешь заменить на os.getenv('SECRET_KEY') для продакшена
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -41,6 +42,8 @@ INSTALLED_APPS = [
     'lms',
     # DRF
     'rest_framework',
+    'django_filters',
+    'rest_framework_simplejwt',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -78,11 +81,15 @@ WSGI_APPLICATION = 'project_drf_new.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# НАСТРОЙКИ ДЛЯ PostgreSQL
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'project_drf_db',         # <-- Имя новой БД, которую мы создали
+        'USER': 'postgres',               # <-- Твой пользователь PostgreSQL
+        'PASSWORD': 'Ещкпфсрштф4349',      # <-- Твой пароль пользователя PostgreSQL
+        'HOST': 'localhost',              # <-- Хост (обычно localhost)
+        'PORT': '5432',                   # <-- Порт (стандартно 5432)
     }
 }
 
@@ -111,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC' # Убедись, что твой часовой пояс (CELERY_TIMEZONE) совпадает с этим или корректно настроен
 
 USE_I18N = True
 
@@ -131,3 +138,77 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # URL-адрес для доступа к медиа-файлам
 MEDIA_URL = '/media/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated', # Это будет применяться по умолчанию ко всем, потом будем переопределять
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+}
+
+# Настройка JWT токенов
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": False,
+
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": "",
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "JWK_URL": None,
+    "LEEWAY": 0,
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+
+    "JTI_CLAIM": "jti",
+
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
+}
+
+
+# Celery settings
+# URL для подключения к брокеру сообщений Redis
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# URL для хранения результатов выполнения задач
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# Формат сериализации/десериализации данных для задач
+CELERY_TASK_SERIALIZER = 'json'
+# Формат сериализации/десериализации результатов
+CELERY_RESULT_SERIALIZER = 'json'
+# Принимаемые форматы содержимого
+CELERY_ACCEPT_CONTENT = ['json']
+# Часовой пояс
+CELERY_TIMEZONE = 'Europe/Moscow' # Или другой твой часовой пояс, если он отличается от UTC в TIME_ZONE
+# Можно отключить ограничение скорости задач по умолчанию, если не нужно
+CELERY_TASK_ACKS = True
+
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'korobovvladislav701@gmail.com' # Твой Gmail
+EMAIL_HOST_PASSWORD = 'wvvh vulj pjxi ktgf' # Твой пароль приложения Google
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
+

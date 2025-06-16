@@ -1,16 +1,19 @@
+# lms/urls.py
+
 from django.urls import path
-from .views import (
-    LessonListAPIView,
-    LessonRetrieveAPIView,
-    LessonCreateAPIView,
-    LessonUpdateAPIView,
-    LessonDestroyAPIView
-)
+from rest_framework.routers import DefaultRouter
+from lms.views import CourseViewSet, LessonViewSet, SubscriptionAPIView
+
+app_name = 'lms'
+
+router = DefaultRouter()
+router.register(r'courses', CourseViewSet, basename='course')
+router.register(r'lessons', LessonViewSet, basename='lesson')
 
 urlpatterns = [
-    path('lessons/', LessonListAPIView.as_view(), name='lesson_list'),
-    path('lessons/create/', LessonCreateAPIView.as_view(), name='lesson_create'),
-    path('lessons/<int:pk>/', LessonRetrieveAPIView.as_view(), name='lesson_detail'),
-    path('lessons/update/<int:pk>/', LessonUpdateAPIView.as_view(), name='lesson_update'),
-    path('lessons/delete/<int:pk>/', LessonDestroyAPIView.as_view(), name='lesson_delete'),
+    # Включаем маршруты, сгенерированные роутером
+    *router.urls,
+
+    # Если SubscriptionAPIView не часть роутера и имеет свой собственный path:
+    path('subscription/', SubscriptionAPIView.as_view(), name='subscription_toggle'),
 ]
