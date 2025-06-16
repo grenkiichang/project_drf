@@ -2,7 +2,8 @@
 
 from rest_framework import serializers
 from lms.models import Course, Lesson
-from .validators import validate_youtube_link # <-- Обязательно импортируйте здесь!
+from .validators import validate_youtube_link
+from lms.models import Subscription
 
 class LessonSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.email')
@@ -12,13 +13,13 @@ class LessonSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Lesson
-        fields = '__all__'  # Включаем все поля модели Lesson
-        # Применяем валидатор к полю video_link
+        fields = '__all__'
+
         extra_kwargs = {
             'video_link': {'validators': [validate_youtube_link]},
         }
 
-    def validate(self, data):  # <-- Это валидатор для "фарфор"/"керамика"
+    def validate(self, data):
         forbidden_words = ['фарфор', 'керамика']
 
         if 'title' in data and data['title']:
@@ -45,6 +46,8 @@ class CourseSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.email')
 
     lessons = LessonSerializer(many=True, read_only=True)
+
+    is_subscribed = serializers.SerializerMethodField()
     """
     Сериализатор для модели Course.
     Преобразует объекты Course в формат JSON и обратно.
@@ -55,3 +58,16 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_lessons_count(self, obj):
         return obj.lessons.count()
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')  # Получаем объект запроса из контекста сериализатора
+        if request and request.user.is_authenticated:  # Проверяем, что пользователь аутентифицирован
+            # Проверяем наличие подписки для текущего курса и пользователя
+            return Subscription.objects.filter(user=request.user, course=obj).exists()
+        return False  # Если пользователь не аутентифицирован, считаем, что не подписан
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = '__all__'

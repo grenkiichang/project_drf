@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+from datetime import timedelta # <-- ЭТОТ ИМПОРТ ДОЛЖЕН БЫТЬ ЗДЕСЬ (В НАЧАЛЕ)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-f#te8zwebdq&0_a4)we_i$9psa44xugdnmooaa@&4%l2jiz)89'
+SECRET_KEY = 'django-insecure-f#te8zwebdq&0_a4)we_i$9psa44xugdnmooaa@&4%l2jiz)89' # Можешь заменить на os.getenv('SECRET_KEY') для продакшена
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -80,11 +81,15 @@ WSGI_APPLICATION = 'project_drf_new.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# НАСТРОЙКИ ДЛЯ PostgreSQL
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'project_drf_db',         # <-- Имя новой БД, которую мы создали
+        'USER': 'postgres',               # <-- Твой пользователь PostgreSQL
+        'PASSWORD': 'Ещкпфсрштф4349',      # <-- Твой пароль пользователя PostgreSQL
+        'HOST': 'localhost',              # <-- Хост (обычно localhost)
+        'PORT': '5432',                   # <-- Порт (стандартно 5432)
     }
 }
 
@@ -113,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC' # Убедись, что твой часовой пояс (CELERY_TIMEZONE) совпадает с этим или корректно настроен
 
 USE_I18N = True
 
@@ -147,7 +152,6 @@ REST_FRAMEWORK = {
 }
 
 # Настройка JWT токенов
-from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
@@ -179,3 +183,32 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
+
+
+# Celery settings
+# URL для подключения к брокеру сообщений Redis
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# URL для хранения результатов выполнения задач
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# Формат сериализации/десериализации данных для задач
+CELERY_TASK_SERIALIZER = 'json'
+# Формат сериализации/десериализации результатов
+CELERY_RESULT_SERIALIZER = 'json'
+# Принимаемые форматы содержимого
+CELERY_ACCEPT_CONTENT = ['json']
+# Часовой пояс
+CELERY_TIMEZONE = 'Europe/Moscow' # Или другой твой часовой пояс, если он отличается от UTC в TIME_ZONE
+# Можно отключить ограничение скорости задач по умолчанию, если не нужно
+CELERY_TASK_ACKS = True
+
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'korobovvladislav701@gmail.com' # Твой Gmail
+EMAIL_HOST_PASSWORD = 'wvvh vulj pjxi ktgf' # Твой пароль приложения Google
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
+
